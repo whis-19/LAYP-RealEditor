@@ -4,17 +4,17 @@ package BLL;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.List;
 
+import DAL.DummyEditorDBDAO;
 import DAL.IFacadeDAO;
 import DTO.Documents;
 
 public class EditorBO implements IEditorBO {
 
-	private IFacadeDAO db;
+	private DummyEditorDBDAO db;
 
-	public EditorBO(IFacadeDAO db) {
+	public EditorBO(DummyEditorDBDAO db) {
 		this.db = db;
 	}
 

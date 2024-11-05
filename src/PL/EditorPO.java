@@ -64,8 +64,7 @@ public class EditorPO extends JFrame {
 	}
 
 	private void setupMainMenuPanel() {
-		tableModel = new DefaultTableModel(new Object[] { "File ID", "File Name", "Last Modified", "Date Created" },
-				0) {
+		tableModel = new DefaultTableModel(new Object[] { "File ID", "File Name", "Last Modified", "Date Created" },0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
 				return false;
