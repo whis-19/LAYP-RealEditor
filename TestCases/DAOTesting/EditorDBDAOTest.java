@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -14,15 +15,17 @@ import org.junit.jupiter.api.Test;
 
 import DAL.EditorDBDAO;
 import DTO.Documents;
+import Utils.ExcelReader;
 
 public class EditorDBDAOTest {
     private EditorDBDAO editorDBDAO;
+    private ExcelReader excelReader;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws IOException {
         editorDBDAO = new EditorDBDAO();
+        excelReader = new ExcelReader("path/to/TestCases.xlsx");
     }
-
 //    @AfterEach
 //    void tearDown() {
 //        List<Documents> documents = editorDBDAO.getFilesFromDB();
@@ -38,18 +41,6 @@ public class EditorDBDAOTest {
         assertFalse(editorDBDAO.getFilesFromDB().isEmpty());
     }
 
-    @Test
-    @DisplayName("Should create file with valid input")
-    public void testCreateFile_ShouldCreateValid() {
-        assertTrue(editorDBDAO.createFileInDB("TestFile", "This is a test content."));
-    }
-
-    @Test
-    @DisplayName("Should create file with empty filename")
-    public void testCreateFile_ShouldCreateEmptyFileName() {
-    	
-        assertTrue(editorDBDAO.createFileInDB("", "This is a test content."));
-    }
 
     @Test
     @DisplayName("Should create file with special characters in filename")
@@ -177,18 +168,6 @@ public class EditorDBDAOTest {
         assertEquals("Updated content", updatedDocument.getPages().get(0).getPageContent());
     }
 
-    @Test
-    @DisplayName("Should transliterate file content correctly")
-    public void testTransliterate_ShouldTransliterateFileContent() {
-        editorDBDAO.createFileInDB("TransliterationTestFile", "مرحبا");
-        List<Documents> documents = editorDBDAO.getFilesFromDB();
-        int pageId = documents.get(0).getPages().get(0).getPageId();
-
-        String transliteratedText = editorDBDAO.transliterateInDB(pageId, "مرحبا");
-        assertNotNull(transliteratedText);
-        // Assume we know the expected output of transliteration
-        assertEquals("MrHba", transliteratedText);  // Replace with actual expected output
-    }
 
     @Test
     @DisplayName("Should not update with non-existent file ID")
@@ -208,7 +187,44 @@ public class EditorDBDAOTest {
         String longContent = generateRepeatedString("A", 1024 * 1024);
         assertTrue(editorDBDAO.createFileInDB("TestFile", longContent));
     }
-    
+    @Test
+    @DisplayName("Should create file with valid input")
+    public void testCreateFile_ShouldCreateValid() {
+        String fileName = excelReader.getCellDataString("TestCases", 1, 1);
+        String content = excelReader.getCellDataString("TestCases", 1, 2);
+        boolean expectedResult = Boolean.parseBoolean(excelReader.getCellDataString("TestCases", 1, 3));
+
+        boolean isCreated = editorDBDAO.createFileInDB(fileName, content);
+        assertEquals(expectedResult, isCreated, "File creation did not match expected result");
+    }
+
+    @Test
+    @DisplayName("Should create file with empty filename")
+    public void testCreateFile_ShouldCreateEmptyFileName() {
+        String fileName = excelReader.getCellDataString("TestCases", 2, 1);
+        String content = excelReader.getCellDataString("TestCases", 2, 2);
+        boolean expectedResult = Boolean.parseBoolean(excelReader.getCellDataString("TestCases", 2, 3));
+
+        boolean isCreated = editorDBDAO.createFileInDB(fileName, content);
+        assertEquals(expectedResult, isCreated, "File creation with empty filename did not match expected result");
+    }
+
+    // Continue modifying other test cases similarly...
+
+    @Test
+    @DisplayName("Should transliterate file content correctly")
+    public void testTransliterate_ShouldTransliterateFileContent() {
+        String fileName = excelReader.getCellDataString("TestCases", 11, 1);
+        String content = excelReader.getCellDataString("TestCases", 11, 2);
+        String expectedTransliteration = excelReader.getCellDataString("TestCases", 11, 3);
+
+        editorDBDAO.createFileInDB(fileName, content);
+        List<Documents> documents = editorDBDAO.getFilesFromDB();
+        int pageId = documents.get(0).getPages().get(0).getPageId();
+
+        String transliteratedText = editorDBDAO.transliterateInDB(pageId, content);
+        assertEquals(expectedTransliteration, transliteratedText, "Transliteration did not match expected result");
+    }
     //test case helper function
     private String generateRepeatedString(String s, int count) {
         StringBuilder sb = new StringBuilder();
