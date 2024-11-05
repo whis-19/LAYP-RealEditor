@@ -1,3 +1,4 @@
+
 package DAL;
 
 import java.util.HashMap;
@@ -5,7 +6,7 @@ import java.util.Map;
 
 public class Transliteration {
 
-    // Updated mapping for Arabic letters to Roman Arabic letters
+
     private static final Map<Character, String> transliterationMap = new HashMap<>();
 
     static {
@@ -14,20 +15,20 @@ public class Transliteration {
         transliterationMap.put('ب', "b");
         transliterationMap.put('ت', "t");
         transliterationMap.put('ث', "th");
-        transliterationMap.put('ج', "j"); // Can also be "g" depending on dialect
-        transliterationMap.put('ح', "H"); // Aspirated "h"
+        transliterationMap.put('ج', "j"); 
+        transliterationMap.put('ح', "H"); 
         transliterationMap.put('خ', "kh");
         transliterationMap.put('د', "d");
-        transliterationMap.put('ذ', "dh"); // "th" as in "this"
+        transliterationMap.put('ذ', "dh");
         transliterationMap.put('ر', "r");
         transliterationMap.put('ز', "z");
         transliterationMap.put('س', "s");
         transliterationMap.put('ش', "sh");
-        transliterationMap.put('ص', "S"); // "S" with a darkened sound
-        transliterationMap.put('ض', "D"); // "D" with a darkened sound
-        transliterationMap.put('ط', "T"); // "T" with a darkened sound
-        transliterationMap.put('ظ', "DH"); // Darkened "th" as in "the"
-        transliterationMap.put('ع', "3"); // Represents "ع" sound
+        transliterationMap.put('ص', "S"); 
+        transliterationMap.put('ض', "D"); 
+        transliterationMap.put('ط', "T"); 
+        transliterationMap.put('ظ', "DH"); 
+        transliterationMap.put('ع', "3"); 
         transliterationMap.put('غ', "gh");
         transliterationMap.put('ف', "f");
         transliterationMap.put('ق', "q");
@@ -36,9 +37,9 @@ public class Transliteration {
         transliterationMap.put('م', "m");
         transliterationMap.put('ن', "n");
         transliterationMap.put('ه', "h");
-        transliterationMap.put('و', "w"); // Can be "uu" or "aw" in different contexts
-        transliterationMap.put('ي', "y"); // Can be "ii" for long vowel
-        transliterationMap.put('ء', "'"); // Glottal stop
+        transliterationMap.put('و', "w"); 
+        transliterationMap.put('ي', "y"); 
+        transliterationMap.put('ء', "'");
         // Adding vowels for pronunciation
         transliterationMap.put('َ', "a");
         transliterationMap.put('ُ', "u");

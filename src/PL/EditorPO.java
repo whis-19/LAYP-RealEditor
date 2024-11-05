@@ -9,235 +9,309 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.List;
-
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.table.DefaultTableModel;
-
 import BLL.IEditorBO;
 import DTO.Documents;
+import DTO.Pages;
 
 public class EditorPO extends JFrame {
 
-    private static final long serialVersionUID = 1L;
-    private IEditorBO businessObj;
-    private DefaultTableModel tableModel;
-    private JPanel mainPanel, editPanel;
-    private JTable fileTable;
-    private JTextArea contentTextArea;
+	private static final long serialVersionUID = 1L;
+	private IEditorBO businessObj;
+	private DefaultTableModel tableModel;
+	private JPanel mainPanel, editPanel, transliterationPanel;
+	private JTable fileTable;
+	private JTextArea contentTextArea, transliteratedTextArea;
+	private JButton nextButton, previousButton;
+	private JLabel pageCountLabel;
+	private Documents doc;
+	private List<Pages> pages;
+	private int currentPage = 1;
+	private int totalPageCount = 0;
 
-    public EditorPO(IEditorBO businessObj) {
-        this.businessObj = businessObj;
+	public EditorPO(IEditorBO businessObj) {
+		this.businessObj = businessObj;
 
-        setTitle("Real Text Editor");
-        setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new CardLayout());
+		setTitle("Real Text Editor");
+		setSize(600, 400);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
+		setLayout(new CardLayout());
 
-        // Main Menu Panel
-        mainPanel = new JPanel(new BorderLayout());
-        setupMainMenuPanel();
+		// Initialize and set up panels
+		mainPanel = new JPanel(new BorderLayout());
+		setupMainMenuPanel();
+		editPanel = new JPanel(new BorderLayout());
+		setupEditPanel();
+		transliterationPanel = new JPanel(new BorderLayout());
+		setupTransliterationPanel();
 
-        // Edit Document Panel
-        editPanel = new JPanel(new BorderLayout());
-        setupEditPanel();
+		// Adding all panels to the frame
+		add(mainPanel, "MainMenu");
+		add(editPanel, "EditDocument");
+		add(transliterationPanel, "TransliterationView");
 
-        // Adding both panels to the frame
-        add(mainPanel, "MainMenu");
-        add(editPanel, "EditDocument");
+		setVisible(true);
+	}
 
-        setVisible(true);
-    }
+	private void setupMainMenuPanel() {
+		tableModel = new DefaultTableModel(new Object[] { "File ID", "File Name", "Last Modified", "Date Created" },
+				0) {
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return false;
+			}
+		};
 
-    private void setupMainMenuPanel() {
-        tableModel = new DefaultTableModel(new Object[] { "File ID", "File Name", "Last Modified", "Date Created" }, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // No cells are editable
-            }
-        };
+		fileTable = new JTable(tableModel);
+		fileTable.getColumnModel().getColumn(0).setMinWidth(0);
+		fileTable.getColumnModel().getColumn(0).setMaxWidth(0);
+		fileTable.getTableHeader().setReorderingAllowed(false);
+		JScrollPane scroller = new JScrollPane(fileTable);
 
-        fileTable = new JTable(tableModel);
-        fileTable.getColumnModel().getColumn(0).setMinWidth(0);
-        fileTable.getColumnModel().getColumn(0).setMaxWidth(0);
-        fileTable.getTableHeader().setReorderingAllowed(false);
-        JScrollPane scroller = new JScrollPane(fileTable);
+		JButton importFileButton = new JButton("Upload Files");
+		JButton createFileButton = new JButton("Create New File");
+		JButton deleteFileButton = new JButton("Delete File(s)");
+		JButton viewFilesButton = new JButton("View Files");
 
-        JButton importFileButton = new JButton("Upload Files");
-        JButton createFileButton = new JButton("Create New File");
-        JButton deleteFileButton = new JButton("Delete File(s)");
-        JButton viewFilesButton = new JButton("View Files");
+		JPanel buttonPanel = new JPanel(new GridLayout(1, 4));
+		buttonPanel.add(importFileButton);
+		buttonPanel.add(createFileButton);
+		buttonPanel.add(deleteFileButton);
+		buttonPanel.add(viewFilesButton);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 4));
-        buttonPanel.add(importFileButton);
-        buttonPanel.add(createFileButton);
-        buttonPanel.add(deleteFileButton);
-        buttonPanel.add(viewFilesButton);
+		mainPanel.add(buttonPanel, BorderLayout.NORTH);
+		mainPanel.add(scroller, BorderLayout.CENTER);
 
-        mainPanel.add(buttonPanel, BorderLayout.NORTH);
-        mainPanel.add(scroller, BorderLayout.CENTER);
+		fileTable.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent event) {
+				if (event.getClickCount() == 2) {
+					int selectedRow = fileTable.getSelectedRow();
+					if (selectedRow != -1) {
+						int fileId = (int) tableModel.getValueAt(selectedRow, 0);
+						openEditPanel(fileId);
+					}
+				}
+			}
+		});
 
-        // Add Mouse Listener for single-click to select and double-click to open files
-        fileTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent event) {
-                if (event.getClickCount() == 1) { // Single-click to select
-                    int selectedRow = fileTable.getSelectedRow();
-                    fileTable.setRowSelectionInterval(selectedRow, selectedRow);
-                } else if (event.getClickCount() == 2) { // Double-click to open
-                    int selectedRow = fileTable.getSelectedRow();
-                    if (selectedRow != -1) {
-                        int fileId = (int) tableModel.getValueAt(selectedRow, 0);
-                        openEditPanel(fileId);
-                    }
-                }
-            }
-        });
+		importFileButton.addActionListener(this::importFiles);
+		createFileButton.addActionListener(this::createFile);
+		deleteFileButton.addActionListener(this::deleteSelectedFiles);
+		viewFilesButton.addActionListener(e -> refreshFileList());
+	}
 
-        // Action Listeners for buttons
-        importFileButton.addActionListener(this::importFiles);
-        createFileButton.addActionListener(this::createFile);
-        deleteFileButton.addActionListener(this::deleteSelectedFiles);
-        viewFilesButton.addActionListener(e -> refreshFileList());
-    }
+	private void setupEditPanel() {
+		contentTextArea = new JTextArea(10, 40);
+		contentTextArea.setLineWrap(true);
+		contentTextArea.setWrapStyleWord(true);
+		contentTextArea.setEditable(true);
 
-    private void setupEditPanel() {
-        contentTextArea = new JTextArea(10, 40);
-        contentTextArea.setLineWrap(true);
-        contentTextArea.setWrapStyleWord(true);
-        contentTextArea.setEditable(true);
+		JScrollPane contentScroller = new JScrollPane(contentTextArea);
+		contentScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-        JScrollPane contentScroller = new JScrollPane(contentTextArea);
-        contentScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		JButton saveFileButton = new JButton("Save File");
+		JButton backButton = new JButton("Back to Menu");
+		JButton transliterateButton = new JButton("Transliterate Content");
 
-        JButton saveFileButton = new JButton("Save File");
-        JButton backButton = new JButton("Back to Menu");
-        JButton transliterateButton = new JButton("Transliterate Content");
+		nextButton = new JButton("Next Page");
+		previousButton = new JButton("Previous Page");
+		nextButton.setEnabled(false);
+		previousButton.setEnabled(false);
 
-        JPanel editButtonPanel = new JPanel(new FlowLayout());
-        editButtonPanel.add(saveFileButton);
-        editButtonPanel.add(backButton);
-        editButtonPanel.add(transliterateButton);
+		pageCountLabel = new JLabel("Page 0 of 0");
 
-        editPanel.add(contentScroller, BorderLayout.CENTER);
-        editPanel.add(editButtonPanel, BorderLayout.SOUTH);
+		JPanel editButtonPanel = new JPanel(new FlowLayout());
+		editButtonPanel.add(previousButton);
+		editButtonPanel.add(pageCountLabel);
+		editButtonPanel.add(nextButton);
+		editButtonPanel.add(saveFileButton);
+		editButtonPanel.add(backButton);
+		editButtonPanel.add(transliterateButton);
 
-        // Save File Action
-        saveFileButton.addActionListener(e -> saveFile());
+		editPanel.add(contentScroller, BorderLayout.CENTER);
+		editPanel.add(editButtonPanel, BorderLayout.SOUTH);
 
-        // Back to Menu Action
-        backButton.addActionListener(e -> {
-            CardLayout cardLayout = (CardLayout) getContentPane().getLayout();
-            cardLayout.show(getContentPane(), "MainMenu");
-            refreshFileList();
-        });
+		nextButton.addActionListener(e -> nextPage());
+		previousButton.addActionListener(e -> previousPage());
+		saveFileButton.addActionListener(e -> saveFile());
+		backButton.addActionListener(e -> {
+			CardLayout cardLayout = (CardLayout) getContentPane().getLayout();
+			cardLayout.show(getContentPane(), "MainMenu");
+			refreshFileList();
+		});
+		transliterateButton.addActionListener(e -> transliterateContent());
+	}
 
-        // Transliterate Content Action
-        transliterateButton.addActionListener(e -> transliterateContent());
-    }
+	private void setupTransliterationPanel() {
+		transliteratedTextArea = new JTextArea();
+		transliteratedTextArea.setLineWrap(true);
+		transliteratedTextArea.setWrapStyleWord(true);
+		transliteratedTextArea.setEditable(false); // Set as non-editable
 
-    private void openEditPanel(int fileId) {
-        String fileContent = businessObj.getFile(fileId);
-        contentTextArea.setText(fileContent != null ? fileContent : "");
-        contentTextArea.setEditable(true); // Ensure the text area is editable when opened
-        CardLayout cardLayout = (CardLayout) getContentPane().getLayout();
-        cardLayout.show(getContentPane(), "EditDocument");
-    }
+		JScrollPane transliterationScroller = new JScrollPane(transliteratedTextArea);
+		transliterationScroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-    private void importFiles(ActionEvent e) {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setMultiSelectionEnabled(true);
-        int result = fileChooser.showOpenDialog(null);
+		JButton backToEditButton = new JButton("Back to Edit");
 
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File[] selectedFiles = fileChooser.getSelectedFiles();
-            if (selectedFiles.length > 0) {
-                for (File selectedFile : selectedFiles) {
-                    String fileName = selectedFile.getName();
-                    boolean isImport = businessObj.importTextFiles(selectedFile, fileName);
-                    JOptionPane.showMessageDialog(null,
-                            isImport ? fileName + " uploaded successfully!" : fileName + " failed to upload!");
-                }
-                refreshFileList();
-            }
-        }
-    }
+		backToEditButton.addActionListener(e -> {
+			CardLayout cardLayout = (CardLayout) getContentPane().getLayout();
+			cardLayout.show(getContentPane(), "EditDocument");
+		});
 
-    private void createFile(ActionEvent e) {
-        String fileName = JOptionPane.showInputDialog("Enter file name:");
-        if (fileName != null) {
-            boolean created = businessObj.createFile(fileName);
-            JOptionPane.showMessageDialog(null, created ? "File created successfully!" : "File creation failed!");
-            refreshFileList();
-        }
-    }
+		JPanel buttonPanel = new JPanel(new FlowLayout());
+		buttonPanel.add(backToEditButton);
 
-    private void deleteSelectedFiles(ActionEvent e) {
-        if (confirmAction("Do you want to delete the selected file?")) {
-            int selectedRow = fileTable.getSelectedRow();
-            if (selectedRow != -1) {
-                int fileId = (int) tableModel.getValueAt(selectedRow, 0);
-                boolean deleted = businessObj.deleteFile(fileId);
-                JOptionPane.showMessageDialog(null,
-                        deleted ? "File deleted successfully!" : "Failed to delete the selected file.");
-                refreshFileList();
-            } else {
-                JOptionPane.showMessageDialog(null, "Please select a file to delete.");
-            }
-        }
-    }
+		transliterationPanel.add(transliterationScroller, BorderLayout.CENTER);
+		transliterationPanel.add(buttonPanel, BorderLayout.SOUTH);
+	}
 
-    private void saveFile() {
-        int selectedRow = fileTable.getSelectedRow();
-        if (selectedRow != -1) {
-            int fileId = (int) tableModel.getValueAt(selectedRow, 0);
-            String fileName = (String) tableModel.getValueAt(selectedRow, 1);
-            String content = contentTextArea.getText();
+	private void openEditPanel(int fileId) {
+		currentPage = 1;
+		doc = businessObj.getFile(fileId);
+		pages = doc.getPages();
+		totalPageCount = pages.size();
 
-            if (content == null || content.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(null, "Cannot save empty content. Please enter some text.");
-                return;
-            }
+		loadPage(currentPage);
 
-            boolean updated = businessObj.updateFile(fileId, fileName, content);
-            JOptionPane.showMessageDialog(null,
-                    updated ? "File updated successfully!" : "File update failed. Duplicate file may exist.");
-            refreshFileList();
-        } else {
-            JOptionPane.showMessageDialog(null, "Please select a file to save.");
-        }
-    }
+		CardLayout cardLayout = (CardLayout) getContentPane().getLayout();
+		cardLayout.show(getContentPane(), "EditDocument");
+	}
 
-    private void transliterateContent() {
-        String content = contentTextArea.getText();
-        if (content != null && !content.trim().isEmpty()) {
-            String transliteratedContent = businessObj.transliterate(content);
-            contentTextArea.setText(transliteratedContent);
-            JOptionPane.showMessageDialog(null, "Content transliterated successfully!");
-        } else {
-            JOptionPane.showMessageDialog(null, "Content is empty. Please enter text to transliterate.");
-        }
-    }
+	private void importFiles(ActionEvent e) {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setMultiSelectionEnabled(true);
+		int result = fileChooser.showOpenDialog(null);
 
-    private boolean confirmAction(String message) {
-        int response = JOptionPane.showConfirmDialog(this, message, "Confirm Action",
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        return response == JOptionPane.YES_OPTION;
-    }
-    private void refreshFileList() {
-        List<Documents> docs = businessObj.getAllFiles();
-        tableModel.setRowCount(0);
+		if (result == JFileChooser.APPROVE_OPTION) {
+			File[] selectedFiles = fileChooser.getSelectedFiles();
+			if (selectedFiles.length > 0) {
+				for (File selectedFile : selectedFiles) {
+					String fileName = selectedFile.getName();
+					boolean isImport = businessObj.importTextFiles(selectedFile, fileName);
+					JOptionPane.showMessageDialog(null,
+							isImport ? fileName + " uploaded successfully!" : fileName + " failed to upload!");
+				}
+				refreshFileList();
+			}
+		}
+	}
 
-        for (Documents doc : docs) {
-            Object[] rowData = { doc.getId(), doc.getName(), doc.getLastModified(), doc.getDateCreated() };
-            tableModel.addRow(rowData);
-        }
-    }
+	private void createFile(ActionEvent e) {
+		String fileName = JOptionPane.showInputDialog("Enter file name:");
+		String fileContent = JOptionPane.showInputDialog("Enter file content:");
+		if (fileName != null) {
+			boolean created = businessObj.createFile(fileName, fileContent);
+			JOptionPane.showMessageDialog(null, created ? "File created successfully!" : "File creation failed!");
+			refreshFileList();
+		}
+	}
+
+	private void deleteSelectedFiles(ActionEvent e) {
+		if (confirmAction("Do you want to delete the selected file?")) {
+			int selectedRow = fileTable.getSelectedRow();
+			if (selectedRow != -1) {
+				int fileId = (int) tableModel.getValueAt(selectedRow, 0);
+				boolean deleted = businessObj.deleteFile(fileId);
+				JOptionPane.showMessageDialog(null,
+						deleted ? "File deleted successfully!" : "Failed to delete the selected file.");
+				refreshFileList();
+			} else {
+				JOptionPane.showMessageDialog(null, "Please select a file to delete.");
+			}
+		}
+	}
+
+	private void saveFile() {
+		int selectedRow = fileTable.getSelectedRow();
+		if (selectedRow != -1) {
+			int fileId = (int) tableModel.getValueAt(selectedRow, 0);
+			String fileName = (String) tableModel.getValueAt(selectedRow, 1);
+			String content = contentTextArea.getText();
+
+			if (content == null || content.trim().isEmpty()) {
+				content = "";
+			}
+
+			boolean updated = businessObj.updateFile(fileId, fileName, currentPage, content);
+			JOptionPane.showMessageDialog(null,
+					updated ? "File updated successfully!" : "File update failed. Duplicate file may exist.");
+			refreshFilePage(fileId, currentPage);
+		} else {
+			JOptionPane.showMessageDialog(null, "Please select a file to save.");
+		}
+	}
+
+	private void nextPage() {
+		if (currentPage < totalPageCount) {
+			currentPage++;
+			loadPage(currentPage);
+		}
+	}
+
+	private void previousPage() {
+		if (currentPage > 1) {
+			currentPage--;
+			loadPage(currentPage);
+		}
+	}
+
+	private void loadPage(int page) {
+		String pageContent = "";
+		for (int i = 0; i < pages.size(); i++) {
+			if (page == pages.get(i).getPageNumber()) {
+				pageContent = pages.get(i).getPageContent();
+			}
+		}
+		contentTextArea.setText(pageContent);
+
+		pageCountLabel.setText("Page " + (page) + " of " + totalPageCount);
+
+		nextButton.setEnabled(page < totalPageCount);
+		previousButton.setEnabled(page > 1);
+	}
+
+	private boolean confirmAction(String message) {
+		int option = JOptionPane.showConfirmDialog(null, message, "Confirm Action", JOptionPane.YES_NO_OPTION);
+		return option == JOptionPane.YES_OPTION;
+	}
+
+	private void transliterateContent() {
+		String content = contentTextArea.getText();
+		int pageId = pages.get(currentPage - 1).getPageId();
+		if (content != null && !content.trim().isEmpty()) {
+			String transliteratedContent = businessObj.transliterate(pageId, content);
+			transliteratedTextArea.setText(transliteratedContent);
+
+			CardLayout cardLayout = (CardLayout) getContentPane().getLayout();
+			cardLayout.show(getContentPane(), "TransliterationView");
+		} else {
+			JOptionPane.showMessageDialog(null, "Content is empty. Please enter text to transliterate.");
+		}
+	}
+
+	private void refreshFilePage(int fileId, int currPage) {
+		openEditPanel(fileId);
+		loadPage(currPage);
+	}
+
+	private void refreshFileList() {
+		List<Documents> docs = businessObj.getAllFiles();
+		tableModel.setRowCount(0);
+
+		for (Documents doc : docs) {
+			Object[] rowData = { doc.getId(), doc.getName(), doc.getLastModified(), doc.getDateCreated() };
+			tableModel.addRow(rowData);
+		}
+	}
 }

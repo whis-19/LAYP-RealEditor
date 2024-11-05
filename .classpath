@@ -6,6 +6,17 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="resource/mariadb-java-client-3.4.1.jar"/>
+	<classpathentry kind="src" path="TestCases"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry kind="lib" path="Resourses/commons-collections4-4.4.jar"/>
+	<classpathentry kind="lib" path="Resourses/commons-compress-1.19.jar"/>
+	<classpathentry kind="lib" path="Resourses/commons-io-2.6.jar"/>
+	<classpathentry kind="lib" path="Resourses/log4j-api-2.20.0.jar"/>
+	<classpathentry kind="lib" path="Resourses/log4j-core-2.20.0.jar"/>
+	<classpathentry kind="lib" path="Resourses/mariadb-java-client-3.4.1.jar"/>
+	<classpathentry kind="lib" path="Resourses/poi-4.1.2.jar"/>
+	<classpathentry kind="lib" path="Resourses/poi-ooxml-4.1.2.jar"/>
+	<classpathentry kind="lib" path="Resourses/poi-ooxml-schemas-4.1.2.jar"/>
+	<classpathentry kind="lib" path="Resourses/xmlbeans-3.1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -14,13 +14,13 @@ public class FacadeDAO implements IFacadeDAO {
     }
 
     @Override
-    public boolean createFileInDB(String nameOfFile) {
-        return mariaDB.createFileInDB(nameOfFile);
+    public boolean createFileInDB(String nameOfFile, String content) {
+        return mariaDB.createFileInDB(nameOfFile, content);
     }
 
     @Override
-    public boolean updateFileInDB(int id, String nameOfFile, String content) {
-        return mariaDB.updateFileInDB(id, nameOfFile, content);
+    public boolean updateFileInDB(int id, String fileName, int pageNumber, String content) {
+        return mariaDB.updateFileInDB(id, fileName, pageNumber, content);
     }
 
     @Override
@@ -33,21 +33,15 @@ public class FacadeDAO implements IFacadeDAO {
         return mariaDB.getFilesFromDB();
     }
 
-	@Override
-	public boolean importFileInDB(String nameOfFile, String content) {
-		return mariaDB.importFileInDB(nameOfFile, content);
-	}
+//	@Override
+//	public String transliterate(String arabicText) {
+//		// TODO Auto-generated method stub
+//		return mariaDB.transliterate(arabicText);
+//	}
 
 	@Override
-	public String getLatestContentByFileId(int fileId) {
-		return mariaDB.getLatestContentByFileId(fileId);
-	}
-
-	@Override
-	public String transliterate(String arabicText) {
+	public String transliterateInDB(int pageId, String arabicText) {
 		// TODO Auto-generated method stub
-		return mariaDB.transliterate(arabicText);
+		return mariaDB.transliterateInDB(pageId, arabicText);
 	}
-
-
 }

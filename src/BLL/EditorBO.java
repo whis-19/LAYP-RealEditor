@@ -1,3 +1,4 @@
+
 package BLL;
 
 import java.io.BufferedReader;
@@ -18,19 +19,19 @@ public class EditorBO implements IEditorBO {
 	}
 
 	@Override
-	public boolean createFile(String nameOfFile) {
+	public boolean createFile(String nameOfFile, String content) {
 		try {
-			return db.createFileInDB(nameOfFile);
+			return db.createFileInDB(nameOfFile, content);
 		} catch (Exception e) {
-			e.printStackTrace(); // Log exception for troubleshooting
-			return false;
+			e.printStackTrace(); 
+			return false; 
 		}
 	}
 
 	@Override
-	public boolean updateFile(int id, String nameOfFile, String content) {
+	public boolean updateFile(int id, String fileName, int pageNumber, String content) {
 		try {
-			return db.updateFileInDB(id, nameOfFile, content);
+			return db.updateFileInDB(id, fileName, pageNumber, content);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
@@ -51,35 +52,35 @@ public class EditorBO implements IEditorBO {
 	public boolean importTextFiles(File file, String fileName) {
 		StringBuilder fileContent = new StringBuilder();
 		String fileExtension = getFileExtension(fileName);
-
-		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+		BufferedReader reader;
+		try {
+			reader = new BufferedReader(new FileReader(file));
 			String line;
+			
 			while ((line = reader.readLine()) != null) {
 				fileContent.append(line).append("\n");
 			}
+			reader.close();
 
-			// Avoid importing duplicate content
-			List<Documents> docs = db.getFilesFromDB();
-			for (Documents doc : docs) {
-				if (doc.getContent() != null && doc.getContent().equals(fileContent.toString())) {
-					return false;
-				}
-			}
-
-			// Save content in pages if it's a text file
 			if (fileExtension.equalsIgnoreCase("txt") || fileExtension.equalsIgnoreCase("md5")) {
-				return db.importFileInDB(fileName, fileContent.toString());
+				return db.createFileInDB(fileName, fileContent.toString());
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
 		}
 		return false;
 	}
 
 	@Override
-	public String getFile(int id) {
-		return db.getLatestContentByFileId(id); // Retrieve the latest content version
+	public Documents getFile(int id) {
+		List<Documents> docs = getAllFiles();
+		for(int i = 0; i < docs.size();i++)
+		{
+			if(id == docs.get(i).getId()) {
+				return docs.get(i);
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -94,8 +95,8 @@ public class EditorBO implements IEditorBO {
 	}
 
 	@Override
-	public String transliterate(String arabicText) {
-		return db.transliterate(arabicText);
+	public String transliterate(int pageId, String arabicText) {
+		return db.transliterateInDB(pageId, arabicText);
 	}
 
 }

@@ -14,15 +14,15 @@ public class FacadeBO implements IFacadeBO {
 	}
 
 	@Override
-	public boolean createFile(String nameOfFile) {
+	public boolean createFile(String nameOfFile, String content) {
 		// TODO Auto-generated method stub
-		return bo.createFile(nameOfFile);
+		return bo.createFile(nameOfFile, content);
 	}
 
 	@Override
-	public boolean updateFile(int id, String nameOfFile, String content) {
+	public boolean updateFile(int id, String fileName, int pageNumber, String content) {
 		// TODO Auto-generated method stub
-		return bo.updateFile(id, nameOfFile, content);
+		return bo.updateFile(id, fileName, pageNumber, content);
 	}
 
 	@Override
@@ -38,7 +38,7 @@ public class FacadeBO implements IFacadeBO {
 	}
 
 	@Override
-	public String getFile(int id) {
+	public Documents getFile(int id) {
 		// TODO Auto-generated method stub
 		return bo.getFile(id);
 	}
@@ -55,11 +55,9 @@ public class FacadeBO implements IFacadeBO {
 		return bo.getFileExtension(fileName);
 	}
 
-
-
 	@Override
-	public String transliterate(String arabicText) {
-		return bo.transliterate(arabicText);
+	public String transliterate(int pageId, String arabicText) {
+		return bo.transliterate(pageId, arabicText);
 	}
 
 }
